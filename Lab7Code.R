@@ -146,8 +146,8 @@ sample.stats1 <- beta.sample1 |>
     beta=beta,
     mean = mean(beta.sample1),
     variance = var(beta.sample1),
-    skewness = skewness(beta.sample1),
-    excess_kurt = kurtosis(beta.sample1)
+    skewness = e1071::skewness(beta.sample4),
+    excess_kurt = e1071::kurtosis(beta.sample4)
   )
 
 hist1 <- ggplot() +
@@ -185,8 +185,8 @@ sample.stats2 <- beta.sample2 |>
     beta=beta,
     mean = mean(beta.sample2),
     variance = var(beta.sample2),
-    skewness = skewness(beta.sample2),
-    excess_kurt = kurtosis(beta.sample2)
+    skewness = e1071::skewness(beta.sample4),
+    excess_kurt = e1071::kurtosis(beta.sample4)
   )
 
 hist2 <- ggplot() +
@@ -224,8 +224,8 @@ sample.stats3 <- beta.sample3 |>
     beta=beta,
     mean = mean(beta.sample3),
     variance = var(beta.sample3),
-    skewness = skewness(beta.sample3),
-    excess_kurt = kurtosis(beta.sample3)
+    skewness = e1071::skewness(beta.sample4),
+    excess_kurt = e1071::kurtosis(beta.sample4)
   )
 
 hist3 <- ggplot() +
@@ -263,8 +263,8 @@ sample.stats4 <- beta.sample4 |>
     beta=beta,
     mean = mean(beta.sample4),
     variance = var(beta.sample4),
-    skewness = skewness(beta.sample4),
-    excess_kurt = kurtosis(beta.sample4)
+    skewness = e1071::skewness(beta.sample4),
+    excess_kurt = e1071::kurtosis(beta.sample4)
   )
 
 hist4 <- ggplot() +
@@ -293,4 +293,113 @@ sample.stats <- bind_rows(
   sample.stats4
 )
 
+################################################################################
+# Task 4: Is Sample Size Important?
+################################################################################
+
+# for the beta(2,5) dist.
+library("cumstats")
+
+set.seed(7272) # Set seed so we all get the same results.
+sample.size <- 500 # Specify sample details
+alpha <- 2
+beta <- 5
+beta.sample1 <- rbeta(n = sample.size,  # sample size
+                      shape1 = alpha,   # alpha parameter
+                      shape2 = beta)    # beta parameter
+
+cumstats.data <- data.frame(
+  alpha=2,
+  beta=5,
+  mean = cummean(beta.sample1),
+  var = cumvar(beta.sample1),
+  skew = cumskew(beta.sample1),
+  kurtosis = cumkurt(beta.sample1)
+)
+
+cumstats.data <- cumstats.data |>
+  mutate(observation = 1:n())
+
+pop.mean <- alpha / (alpha + beta)
+pop.var <- (alpha * beta) / ((alpha + beta)^2 * (alpha + beta + 1))
+pop.skew <- (2 * (beta - alpha) * sqrt(alpha + beta + 1)) / 
+  ((alpha + beta + 2) * sqrt(alpha * beta))
+pop.kurt <- (6*((alpha-beta)^2*(alpha+beta+1)-alpha*beta*(alpha+beta+2))) /
+  (alpha*beta*(alpha+beta+2)*(alpha+beta+3))
+  
+
+
+cumstats.mean <- ggplot(data=cumstats.data) +
+  geom_line(aes(x=observation, y=mean, color="Cumulative Mean"), show.legend=F) +
+  geom_hline(yintercept=pop.mean)+  
+  xlab("observation") +
+  ylab("mean") +
+  ggtitle("Cumulative Statistics Mean") +
+  theme_bw()
+
+cumstats.var <- ggplot(data=cumstats.data) +
+  geom_line(aes(x=observation, y=var, color="Cumulative Variance"), show.legend=F) +
+  geom_hline(yintercept = pop.var) +  
+  xlab("observation") +
+  ylab("variance") +
+  ggtitle("Cumulative Statistics Variance") +
+  theme_bw()
+
+cumstats.skew <- ggplot(data=cumstats.data) +
+  geom_line(aes(x=observation, y=skew, color="Cumulative Skewness"), show.legend=F) +
+  geom_hline(yintercept = pop.skew) +
+  xlab("observation") +
+  ylab("skewness") +
+  ggtitle("Cumulative Statistics Skewness") +
+  theme_bw()
+
+cumstats.kurt <- ggplot(data=cumstats.data) +
+  geom_line(aes(x=observation, y=kurtosis-3, color="Cumulative Kurtosis"), show.legend=F) +
+  geom_hline(yintercept = pop.kurt) + 
+  xlab("observation") +
+  ylab("skewness") +
+  ggtitle("Cumulative Statistics Kurtosis") +
+  theme_bw()
+
+library(patchwork)
+cumulative.stats <-  cumstats.mean + cumstats.var + cumstats.skew + cumstats.kurt
+
+# now do this in a for loop for 2:50
+for (i in 2:50){
+  set.seed(7272 + i)
+  sample.size <- 500 # Specify sample details
+  alpha <- 2
+  beta <- 5
+  beta.sample <- rbeta(n = sample.size,  # sample size
+                        shape1 = alpha,   # alpha parameter
+                        shape2 = beta)    # beta parameter
+  
+  new.cumstats.data <- data.frame(
+    alpha=2,
+    beta=5,
+    mean = cummean(beta.sample),
+    var = cumvar(beta.sample),
+    skew = cumskew(beta.sample),
+    kurtosis = cumkurt(beta.sample)-3
+  )
+  
+  new.cumstats.data <- new.cumstats.data |>
+    mutate(observation = 1:n())
+  
+  cumstats.mean <- cumstats.mean +
+    geom_line(data=new.cumstats.data, aes(x=observation, y=mean), color=i)
+  
+  cumstats.var <- cumstats.var + 
+    geom_line(data=new.cumstats.data, aes(x=observation, y=var), color=i)
+  
+  cumstats.skew <- cumstats.skew +
+    geom_line(data=new.cumstats.data, aes(x=observation, y=skew), color=i)
+  
+  cumstats.kurt <- cumstats.kurt +
+    geom_line(data=new.cumstats.data, aes(x=observation, y=kurtosis), color=i)
+  
+  cumulative.stats.new <- cumstats.mean + cumstats.var + cumstats.skew + cumstats.kurt
+  }
+
+cumulative.stats.new
 

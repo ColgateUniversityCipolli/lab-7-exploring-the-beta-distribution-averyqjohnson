@@ -403,3 +403,85 @@ for (i in 2:50){
 
 cumulative.stats.new
 
+################################################################################
+# Task 5: How can we model the variation? 
+################################################################################
+
+new.stats <- data.frame() 
+
+for (i in 1:1000){
+  set.seed(7272 + i)
+  sample.size <- 500 # Specify sample details
+  alpha <- 2
+  beta <- 5
+  beta.sample <- rbeta(n = sample.size,  # sample size
+                       shape1 = alpha,   # alpha parameter
+                       shape2 = beta)    # beta parameter
+  stats <- data.frame(
+    alpha = alpha,
+    beta = beta,
+    mean = mean(beta.sample),
+    variance = var(beta.sample),
+    skewness = e1071::skewness(beta.sample),
+    excess_kurt = e1071::kurtosis(beta.sample)
+  )
+  
+  new.stats <- bind_rows(new.stats, stats)
+}
+
+view(new.stats)
+
+# Plot Stats
+
+# Mean Plot
+mean.plot <- ggplot() +
+  geom_histogram(data = new.stats, aes(x=mean, y=after_stat(density)), 
+                 bins=40,
+                 fill="grey30",
+                 color="lightgray")+
+  geom_density(data=new.stats, aes(x=mean, color="Density")) +
+  theme_bw() +
+  ggtitle("Histogram of Means") +
+  xlab("Mean") +
+  ylab("Density") +
+  labs(color="Line")
+
+# Variance Plot
+var.plot <- ggplot() +
+  geom_histogram(data = new.stats, aes(x=variance, y=after_stat(density)), 
+                 bins=40,
+                 fill="grey30",
+                 color="lightgray")+
+  geom_density(data=new.stats, aes(x=variance, color="Density")) +
+  theme_bw() +
+  ggtitle("Histogram of Variances") +
+  xlab("Variance") +
+  ylab("Density") +
+  labs(color="Line")
+
+# Skew Plot
+skew.plot <- ggplot() +
+  geom_histogram(data = new.stats, aes(x=skewness, y=after_stat(density)), 
+                 bins=40,
+                 fill="grey30",
+                 color="lightgray")+
+  geom_density(data=new.stats, aes(x=skewness, color="Density")) +
+  theme_bw() +
+  ggtitle("Histogram of Skewnesses") +
+  xlab("Skewness") +
+  ylab("Density") +
+  labs(color="Line")
+
+# Excess Kurt Plot
+kurt.plot <- ggplot() +
+  geom_histogram(data = new.stats, aes(x=excess_kurt, y=after_stat(density)), 
+                 bins=40,
+                 fill="grey30",
+                 color="lightgray")+
+  geom_density(data=new.stats, aes(x=excess_kurt, color="Density")) +
+  theme_bw() +
+  ggtitle("Histogram of Excess Kurtosis") +
+  xlab("Excess Kurtosis") +
+  ylab("Density") +
+  labs(color="Line")
+  

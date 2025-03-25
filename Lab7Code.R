@@ -146,8 +146,8 @@ sample.stats1 <- beta.sample1 |>
     beta=beta,
     mean = mean(beta.sample1),
     variance = var(beta.sample1),
-    skewness = e1071::skewness(beta.sample4),
-    excess_kurt = e1071::kurtosis(beta.sample4)
+    skewness = e1071::skewness(beta.sample1),
+    excess_kurt = e1071::kurtosis(beta.sample1)
   )
 
 hist1 <- ggplot() +
@@ -185,8 +185,8 @@ sample.stats2 <- beta.sample2 |>
     beta=beta,
     mean = mean(beta.sample2),
     variance = var(beta.sample2),
-    skewness = e1071::skewness(beta.sample4),
-    excess_kurt = e1071::kurtosis(beta.sample4)
+    skewness = e1071::skewness(beta.sample2),
+    excess_kurt = e1071::kurtosis(beta.sample2)
   )
 
 hist2 <- ggplot() +
@@ -224,8 +224,8 @@ sample.stats3 <- beta.sample3 |>
     beta=beta,
     mean = mean(beta.sample3),
     variance = var(beta.sample3),
-    skewness = e1071::skewness(beta.sample4),
-    excess_kurt = e1071::kurtosis(beta.sample4)
+    skewness = e1071::skewness(beta.sample3),
+    excess_kurt = e1071::kurtosis(beta.sample3)
   )
 
 hist3 <- ggplot() +
@@ -484,4 +484,197 @@ kurt.plot <- ggplot() +
   xlab("Excess Kurtosis") +
   ylab("Density") +
   labs(color="Line")
+
+stats.plots <- mean.plot + var.plot + skew.plot + kurt.plot + plot_layout(guides = "collect")
+stats.plots
+
+################################################################################
+# Task 6: Collect and Clean Data
+################################################################################
+library(tidyverse)
+death.rates <- read_csv("countrydeathrates.csv", skip=3)
+
+death.data <- death.rates |>
+  select("Country Name", "Country Code", `2022`) |> #keep only relevant columns
+  filter(!is.na(`2022`)) |>
+  mutate(`2022` = `2022` / 1000) |> #convert to rate
+  rename("death rate" = `2022` )
+
+View(death.data)  
+
+################################################################################
+# Task 7: What are alpha and beta?
+################################################################################
+library(nleqslv)
+
+# MOM
+MOM.beta <- function(data, par){
+  alpha <- par[1]
+  beta <- par[2]
   
+  EX <- alpha / (alpha + beta)
+  EX2 <- ((alpha + 1) * alpha) / ((alpha + beta + 1)*(alpha + beta))
+  m1 <- mean(data)
+  m2 <- mean(data^2)
+  
+  return(c((EX-m1), (EX2-m2))) # goal: find alpha and beta so these are 0
+}
+
+mom.estimates <- nleqslv(x = c(1, 1), # guess
+        fn = MOM.beta,
+        data=death.data$`death rate`)
+
+mom.alpha <- mom.estimates$x[1]
+mom.beta <- mom.estimates$x[2]
+
+# MLE
+llbeta <- function(data, par, neg=FALSE){
+  alpha <- par[1]
+  beta <- par[2]
+  loglik <- sum(log(dbeta(x=data, alpha, beta)))
+  
+  return(ifelse(neg, -loglik, loglik))
+}
+
+mle.estimates <- optim(par = c(1,1),
+      fn = llbeta,
+      data=death.data$`death rate`,
+      neg = T)
+
+mle.alpha <- mle.estimates$par[1]
+mle.beta <- mle.estimates$par[2]
+
+density.data <- tibble(x=seq(0,0.023, length.out=1000)) |>
+  mutate(mom.density = dbeta(x, mom.alpha, mom.beta),
+         mle.density = dbeta(x, mle.alpha, mle.beta))
+
+# histograms 
+ggplot() + 
+  geom_histogram(data=death.data,
+           aes(x=`death rate`,
+               y=after_stat(density)),
+           fill="grey")+
+  geom_line(data = density.data, aes(x=x, y=mom.density, color="MOM Estimate")) +
+  geom_line(data = density.data, aes(x=x, y=mle.density, color="MLE Estimate")) +
+  theme_bw() +
+  xlab("Death Rate") +
+  ylab("Density") +
+  ggtitle("Death Rates with Estimated Beta Distributions") 
+
+################################################################################
+# Task 8: Which estimators should we use
+################################################################################
+
+results <- data.frame(mom.alpha = numeric(1000), 
+                      mom.beta = numeric(1000), 
+                      mle.alpha = numeric(1000), 
+                      mle.beta = numeric(1000))
+
+for (i in 1:1000){
+  set.seed(7272 + i)
+  sample.size <- 266 # Specify sample details
+  alpha <- 8
+  beta <- 950
+  beta.sample <- rbeta(n = sample.size,  # sample size
+                       shape1 = alpha,   # alpha parameter
+                       shape2 = beta)    # beta parameter
+
+  # MOM ESTIMATES
+  mom.estimates <- nleqslv(x = c(1, 1), # guess
+                           fn = MOM.beta,
+                           data=beta.sample)
+  
+  mom.alpha <- mom.estimates$x[1]
+  mom.beta <- mom.estimates$x[2]
+  
+  # MLE ESTIMATES
+  mle.estimates <- optim(par = c(1,1),
+                         fn = llbeta,
+                         data=beta.sample,
+                         neg = T)
+  
+  mle.alpha <- mle.estimates$par[1]
+  mle.beta <- mle.estimates$par[2]
+  
+  results[i, ] <- c(mom.alpha, mom.beta, mle.alpha, mle.beta)
+}
+view(results)
+
+# true parameters
+alpha_true <- 8
+beta_true <- 950
+
+#compute bias, precision, MLE
+bias_mom_alpha <- mean(results$mom.alpha) - alpha_true
+bias_mom_beta <- mean(results$mom.beta) - beta_true
+bias_mle_alpha <- mean(results$mle.alpha) - alpha_true
+bias_mle_beta <- mean(results$mle.beta) - beta_true
+
+precision_mom_alpha <- 1 / var(results$mom.alpha)
+precision_mom_beta <- 1 / var(results$mom.beta)
+precision_mle_alpha <- 1 / var(results$mle.alpha)
+precision_mle_beta <- 1 / var(results$mle.beta)
+
+mse_mom_alpha <- var(results$mom.alpha) + bias_mom_alpha^2
+mse_mom_beta <- var(results$mom.beta) + bias_mom_beta^2
+mse_mle_alpha <- var(results$mle.alpha) + bias_mle_alpha^2
+mse_mle_beta <- var(results$mle.beta) + bias_mle_beta^2
+
+summary.table <- data.frame(
+  Parameter = c("Alpha", "Beta"),
+  Bias_MOM = c(bias_mom_alpha, bias_mom_beta),
+  Bias_MLE = c(bias_mle_alpha, bias_mle_beta),
+  Precision_MOM = c(precision_mom_alpha, precision_mom_beta),
+  Precision_MLE = c(precision_mle_alpha, precision_mle_beta),
+  MSE_MOM = c(mse_mom_alpha, mse_mom_beta),
+  MSE_MLE = c(mse_mle_alpha, mse_mle_beta)
+)
+
+view(summary.table)
+
+# create density plots
+p1 <- ggplot() +
+  geom_density(data=results, aes(x=mom.alpha, color="Density")) +
+  ggtitle("MOM Alpha Density") +
+  xlab("MOM Density") +
+  ylab("Density")
+
+p2<- ggplot() + 
+  geom_density(data=results, aes(x=mom.beta, color="Density")) +
+  ggtitle("MOM Beta Density") +
+  xlab("MOM Density") +
+  ylab("Density")
+
+p3 <- ggplot() +
+  geom_density(data=results, aes(x=mle.alpha, color="Density")) +
+  ggtitle("MLE Alpha Density") +
+  xlab("MLE Density") +
+  ylab("Density")
+
+p4<- ggplot() + 
+  geom_density(data=results, aes(x=mle.beta, color="Density")) +
+  ggtitle("MLE Beta Density") +
+  xlab("MLE Density") +
+  ylab("Density")
+
+plot.grid <- p1 + p2 + p3 + p4
+
+p.alpha <- ggplot() +
+  geom_density(data=results, aes(x=mom.alpha, color="MOM")) +
+  geom_density(data=results, aes(x=mle.alpha, color="MLE")) +
+  theme_bw() +
+  ggtitle("Alpha Density") +
+  xlab("Alpha") +
+  ylab("Density") +
+  scale_color_manual(name = "Estimator", values = c("MOM" = "blue", "MLE" = "red"))
+  
+p.beta <- ggplot() +
+  geom_density(data=results, aes(x=mom.beta, color="MOM")) +
+  geom_density(data=results, aes(x=mle.beta, color="MLE")) +
+  theme_bw() +
+  ggtitle("Beta Density") +
+  xlab("Beta") +
+  ylab("Density") +
+  scale_color_manual(name = "Estimator", values = c("MOM" = "blue", "MLE" = "red"))
+
+p.alpha + p.beta

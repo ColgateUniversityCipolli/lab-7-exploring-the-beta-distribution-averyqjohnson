@@ -284,7 +284,7 @@ hist4 <- ggplot() +
   labs(color="Line") +
   ggtitle("Beta (0.5,0.5) Distribution")
 
-hist1 + hist2 + hist3 + hist4 + plot_layout(guides = 'collect')
+sample.histograms <- hist1 + hist2 + hist3 + hist4 + plot_layout(guides = 'collect')
 
 sample.stats <- bind_rows(
   sample.stats1,

@@ -24,7 +24,7 @@
 \begin{document}
 
 \vspace{-1in}
-\title{Lab XX -- MATH 240 -- Computational Statistics}
+\title{Lab 8 -- MATH 240 -- Computational Statistics}
 
 \author{
   Avery Johnson \\
@@ -39,59 +39,212 @@
 
 \begin{multicols}{2}
 \begin{abstract}
-This document provides a basic template for the 2-page labs we will complete each week. Here, briefly summarize what you did and why it might be helpful. Provide all the top-line conclusions, but avoid providing \emph{all} the details. Results should be limited to ``we show X, Y, and Z."
+The Beta distribution is a flexible probability distribution defined on the interval (0,1), often used to model proportions and probabilities. This lab investigates the properties of the Beta distribution, including its mean, variance, skewness, and kurtosis, using both theoretical derivations and numerical simulations. Through the generation of Beta-distributed samples, the convergence of sample statistics to population values is examined, highlighting the importance of sample size in statistical examination. Additionally, two estimation methods, the Method of Moments (MOM) and Maximum Likelihood Estimation (MLE), are compared using simulated real-world data. The effectiveness of these methods is evaluated through repeated sampling, with results demonstrating that the MLE provides more accurate and precise estimates than MOM. The application of the Beta distribution to country death rate data further illustrates its relevance in real-world modeling. 
+
 \end{abstract}
 
-\noindent \textbf{Keywords:} What topics does the lab cover concerning class? List 3-4 key terms here, separated by semicolons.
+\noindent \textbf{Keywords:} 
+Beta distribution, moments, mean, variance, skewness, kurtosis, MOM estimator, MLE estimator.
 
 \section{Introduction}
-Provide an overarching summary of what you're talking about. In this section, you introduce the idea to the reader, and your goal is to pull them in. What's the mystery you aim to solve?
+The Beta distribution is a continuous probability distribution defined on $[0,1]$. It is commonly used to model proportions, probabilities, and rates, making it useful in a variety of statistical and real-world applications. The shape of the Beta distribution is controlled by two parameters, $\alpha$ and $\beta$, which determine its skewness and characteristics. This lab explores the properties of the Beta distribution, compares theoretical and sample-based estimates, and applies parameter estimation techniques to real-world data. The primary objectives are to analyze the Beta distribution's properties, to compare sample statistics with true population values, to estimate the parameters $\alpha$ and $\beta$ from real-world data using the Method of Moments (MLE) and Maximum Likelihood Estimation (MLE), and to assess the effectiveness of different estimation techniques using simulation.
 
-You want to provide enough background to understand the context of the work. Specifically, what is the question you are addressing? If it applies, describe what information currently exists about this problem, including citations, and explain how the question you're answering complements this work.
+\section{Density Functions and Parameters}
+The probability density function (PDF) of a beta distribution is given by:
 
-Provide a roadmap of the structure of the paper. 
+$$
+f_X(x \mid \alpha, \beta) = \frac{\Gamma(\alpha + \beta)}{\Gamma \alpha \Gamma \beta} x^{\alpha-1} (1-x)^{\beta - 1} I(x \in [0,1])
+$$
+where $I(x \in [0,1]) = 1$ when $x \in [0, 1]$ and $0$ otherwise.
 
-\subsection{Intro Subsection}
-You might need/want to discuss the topics in subsections. Or, you may have multiple questions.
-
-\begin{Figure}
-\includegraphics{screenshot}
-\end{Figure}
-
-\section{Methods}
-Describe the data you are working with, if applicable. Describe the specific process you will follow to answer the question at hand. This does not mean you should write something like this.
-\begin{quote}
-\textit{I did this and then I did that and then I did this other thing and then..., and then..., and then...}
-\end{quote}
-Instead, it should provide a clear and concise narrative that flows from the problem specification in the Introduction to how you will approach answering it. This is where I would expect to see some citations for \texttt{R} packages you will use to conduct the statistical analysis reported in the Results section.
+To visualize the impact of the parameters $\alpha$ and $\beta$ on the distribution, four cases were examined: Beta(2,5), Beta(5,5), Beta(5,2), and Beta(0.5,0.5). The first distribution is right-skewed, the second is symmetric, the third is left-skewed, and the forth is U-shaped. These distributions were plotted to illustrate how the parameters influence the shape of the density function. The plots in Figure \ref{populationfigures} demonstrate that increasing $\alpha$ shifts the distribution towards 1, while increasing $\beta$ shifts it towards zero. When $\alpha = \beta$, the distribution is symmetric. 
 
 
-\subsection{Methods Subsection}
-Much like the Introduction, subsections can be helpful for the Methods section. For example, you might describe data collection and the statistical analyses of the collected data in different subsections. Or, you may have different questions that require distinct methods. 
+\section{Properties}
+The Beta distribution's key properties include its mean, variance, skewness, and kurtosis. Each of the properties relies on $\alpha$ and $\beta$, showing how the distribution's shape and behavior changes depending on the parameters. These moments were computed using numerical integration and verified against the theoretical values in Table \ref{populationsummary}. 
+To evaluate whether data summaries of random samples connect to the actual population distribution, random samples of size 500 were drawn from each Beta distribution. The sample mean, variance, skewness, and kurtosis were computed as can be seen in Table \ref{samplestatistics}. These were then compared to population-level quantities in Table \ref{populationsummary}, and we conclude that the values closely resembled one another. Furthermore, the histograms and estimated density in Figure \ref{samplehistograms} demonstrate that the samples, in each case, closely resemble the theoretical Beta probability density functions. From this analysis, we confirmed that both our graphical and numerical summaries of random samples connect to the actual population distribution.
 
-\section{Results}
-Tie together the Introduction -- where you introduce the problem at hand -- and the methods --  what you propose to do to answer the question. Present your data, the results of your analyses, and how each reported aspect contributes to answering the question. This section should include table(s), statistic(s), and graphical displays. Make sure to put the results in a sensible order and that each result contributes a logical and developed solution. It should not just be a list. Avoid being repetitive. 
+<<echo=FALSE, eval=TRUE, results="asis", message=FALSE, warning=FALSE, size='scriptsize'>>=
+################################################################################
+# Lab 7 Code
+# Avery Johnson
+################################################################################
 
-\subsection{Results Subsection}
-Subsections can be helpful for the Results section, too. This can be particularly helpful if you have different questions to answer. 
+library(tidyverse)
+
+################################################################################
+# Task 1: Describe the Population Distribution
+################################################################################
 
 
-\section{Discussion}
- You should objectively evaluate the evidence you found in the data. Do not embellish or wish-terpet (my made-up phase for making an interpretation you, or the researcher, wants to be true without the data \emph{actually} supporting it). Connect your findings to the existing information you provided in the Introduction.
+population.distribution <- function(alpha, beta) {
+  beta.dist <- data.frame(
+    alpha = alpha,
+    beta = beta,
+    mean = alpha / (alpha + beta),
+    var = (alpha * beta) / ((alpha + beta)^2 * (alpha + beta + 1)),
+    skew = (2 * (beta - alpha) * sqrt(alpha + beta + 1)) / 
+      ((alpha + beta + 2) * sqrt(alpha * beta)),
+    kurtosis = (6*((alpha-beta)^2*(alpha+beta+1)-alpha*beta*(alpha+beta+2))) /
+      (alpha*beta*(alpha+beta+2)*(alpha+beta+3))
+  )
+  return(beta.dist)
+}
 
-Finally, provide some concluding remarks that tie together the entire paper. Think of the last part of the results as abstract-like. Tell the reader what they just consumed -- what's the takeaway message?
+population.table <- bind_rows(
+  population.distribution(2,5),
+  population.distribution(5,5),
+  population.distribution(5,2),
+  population.distribution(0.50, 0.50)
+)
+
+# create Latex table
+library(xtable)
+latex_table <- xtable(population.table, 
+                      caption="Population-Level Summary",
+                      label="populationsummary")
+
+################################################################################
+# Task 3: Do Data Summaries Help?
+################################################################################
+
+# for beta(2,5) dist
+library(e1071)
+
+set.seed(7272) # Set seed so we all get the same results.
+sample.size <- 500 # Specify sample details
+alpha <- 2
+beta <- 5
+beta.sample1 <- rbeta(n = sample.size,  # sample size
+                     shape1 = alpha,   # alpha parameter
+                     shape2 = beta)    # beta parameter
+
+beta.sample1 <- tibble(beta.sample1)
+
+sample.stats1 <- beta.sample1 |>
+  summarize(
+    alpha=alpha,
+    beta=beta,
+    mean = mean(beta.sample1),
+    var = var(beta.sample1),
+    skew = e1071::skewness(beta.sample1),
+    kurtosis = e1071::kurtosis(beta.sample1)
+  )
+
+# for beta(5,5) dist
+
+set.seed(7272) # Set seed so we all get the same results.
+sample.size <- 500 # Specify sample details
+alpha <- 5
+beta <- 5
+beta.sample2 <- rbeta(n = sample.size,  # sample size
+                      shape1 = alpha,   # alpha parameter
+                      shape2 = beta)    # beta parameter
+
+beta.sample2 <- tibble(beta.sample2)
+
+sample.stats2 <- beta.sample2 |>
+  summarize(
+    alpha=alpha,
+    beta=beta,
+    mean = mean(beta.sample2),
+    var = var(beta.sample2),
+    skew = e1071::skewness(beta.sample2),
+    kurtosis = e1071::kurtosis(beta.sample2)
+  )
+
+# for beta (5,2) distribution
+
+set.seed(7272) # Set seed so we all get the same results.
+sample.size <- 500 # Specify sample details
+alpha <- 5
+beta <- 2
+beta.sample3 <- rbeta(n = sample.size,  # sample size
+                      shape1 = alpha,   # alpha parameter
+                      shape2 = beta)    # beta parameter
+
+beta.sample3 <- tibble(beta.sample3)
+
+sample.stats3 <- beta.sample3 |>
+  summarize(
+    alpha=alpha,
+    beta=beta,
+    mean = mean(beta.sample3),
+    var = var(beta.sample3),
+    skew = e1071::skewness(beta.sample3),
+    kurtosis = e1071::kurtosis(beta.sample3)
+  )
+
+# for beta(0.5, 0.5 dist)
+
+set.seed(7272) # Set seed so we all get the same results.
+sample.size <- 500 # Specify sample details
+alpha <- 0.5
+beta <- 0.5
+beta.sample4 <- rbeta(n = sample.size,  # sample size
+                      shape1 = alpha,   # alpha parameter
+                      shape2 = beta)    # beta parameter
+
+beta.sample4 <- tibble(beta.sample4)
+
+sample.stats4 <- beta.sample4 |>
+  summarize(
+    alpha=alpha,
+    beta=beta,
+    mean = mean(beta.sample4),
+    var = var(beta.sample4),
+    skew = e1071::skewness(beta.sample4),
+    kurtosis = e1071::kurtosis(beta.sample4)
+  )
+
+sample.stats <- bind_rows(
+  sample.stats1,
+  sample.stats2,
+  sample.stats3,
+  sample.stats4
+)
+
+# create Latex table
+library(xtable)
+sample.stats.xtable <- xtable(sample.stats, 
+                      caption="Sample Summary",
+                      label="samplestatistics")
+
+
+@
+
+<<echo=FALSE, eval=TRUE, results="asis">>=
+# placement="H" places table [H]ere, just like plot
+# include.rownames=FALSE doesn’t print the row numbers in this example
+print(latex_table,
+table.placement = "H", include.rownames=FALSE, size = "small")
+@
+
+<<echo=FALSE, eval=TRUE, results="asis">>=
+# placement="H" places table [H]ere, just like plot
+# include.rownames=FALSE doesn’t print the row numbers in this example
+print(sample.stats.xtable,
+table.placement = "H", include.rownames=FALSE, size = "small")
+@
+
+\section{Estimators}
+
+
+\section{Death Rates Example}
+
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Bibliography
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \vspace{2em}
 
-\noindent\textbf{Bibliography:} Note that when you add citations to your bib.bib file \emph{and}
-you cite them in your document, the bibliography section will automatically populate here.
+\noindent\textbf{Bibliography:} 
 
 \begin{tiny}
 \bibliography{bib}
 \end{tiny}
+
+
 \end{multicols}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -101,6 +254,253 @@ you cite them in your document, the bibliography section will automatically popu
 \onecolumn
 \section{Appendix}
 
-If you have anything extra, you can add it here in the appendix. This can include images or tables that don't work well in the two-page setup, code snippets you might want to share, etc.
+\subsection{Density Function and Parameters}
+\subsubsection{Population Distribution Figures}
+<<plot1, echo=FALSE, eval=TRUE, message=FALSE, warning=FALSE, size='scriptsize'>>=
+# plot these four distributions 
+fig.1.data <- tibble(x = seq(-0.25, 1.25, length.out=1000))|>   # generate a grid of points
+  mutate(beta.pdf = dbeta(x, 2, 5))                          # compute the beta PDF
+
+plot1 <- ggplot(data= fig.1.data)+                                           # specify data
+  geom_line(aes(x=x, y=beta.pdf, color="Beta(2,5)")) +          # plot beta dist
+  geom_hline(yintercept=0)+                                            # plot x axis
+  theme_bw()+                                                          # change theme
+  xlab("x")+                                                           # label x axis
+  ylab("Density")+                                                     # label y axis
+  scale_color_manual("", values = c("black", "grey"))+                 # change colors
+  theme(legend.position = "bottom")                                    # move legend to bottom
+
+
+fig.2.data <- tibble(x = seq(-0.25, 1.25, length.out=1000))|>   
+  mutate(beta.pdf = dbeta(x, 5, 5))                          
+         
+plot2 <- ggplot(data= fig.2.data)+                                          
+  geom_line(aes(x=x, y=beta.pdf, color="Beta(5,5)")) +          
+  geom_hline(yintercept=0)+                                            
+  theme_bw()+                                                          
+  xlab("x")+                                                          
+  ylab("Density")+                                                     
+  scale_color_manual("", values = c("black", "grey"))+                
+  theme(legend.position = "bottom")
+
+fig.3.data <- tibble(x = seq(-0.25, 1.25, length.out=1000))|>   
+  mutate(beta.pdf = dbeta(x, 5, 2))                          
+
+plot3 <- ggplot(data= fig.3.data)+                                          
+  geom_line(aes(x=x, y=beta.pdf, color="Beta(5,2)")) +          
+  geom_hline(yintercept=0)+                                            
+  theme_bw()+                                                          
+  xlab("x")+                                                          
+  ylab("Density")+                                                     
+  scale_color_manual("", values = c("black", "grey"))+                
+  theme(legend.position = "bottom") 
+
+fig.4.data <- tibble(x = seq(-0.25, 1.25, length.out=1000))|>   
+  mutate(beta.pdf = dbeta(x, 0.5, 0.5))                          
+
+plot4 <- ggplot(data= fig.4.data)+                                          
+  geom_line(aes(x=x, y=beta.pdf, color="Beta(0.5,0.5)")) +          
+  geom_hline(yintercept=0)+                                            
+  theme_bw()+                                                          
+  xlab("x")+                                                          
+  ylab("Density")+                                                     
+  scale_color_manual("", values = c("black", "grey"))+                
+  theme(legend.position = "bottom") 
+
+library(patchwork)
+population.figures <- plot1 + plot2 + plot3 + plot4
+population.figures
+@
+
+\begin{figure}[H]
+\begin{center}
+<<echo=FALSE, warning=FALSE, message=FALSE, fig.dim=c(2.5,1.75)>>=
+@
+\caption{Population Figures for Various Beta Distributions}
+\label{populationfigures} %we can now reference plot1
+\end{center}
+\end{figure}
+
+\subsection{Properties}
+\subsubsection{Sample Distribution Figures}
+<<plot2, echo=FALSE, eval=TRUE, message=FALSE, warning=FALSE, size='scriptsize'>>=
+################################################################################
+# Task 3: Do Data Summaries Help?
+################################################################################
+
+# for beta(2,5) dist
+library(e1071)
+
+set.seed(7272) # Set seed so we all get the same results.
+sample.size <- 500 # Specify sample details
+alpha <- 2
+beta <- 5
+beta.sample1 <- rbeta(n = sample.size,  # sample size
+                     shape1 = alpha,   # alpha parameter
+                     shape2 = beta)    # beta parameter
+
+beta.sample1 <- tibble(beta.sample1)
+
+sample.stats1 <- beta.sample1 |>
+  summarize(
+    alpha=alpha,
+    beta=beta,
+    mean = mean(beta.sample1),
+    variance = var(beta.sample1),
+    skewness = e1071::skewness(beta.sample1),
+    excess_kurt = e1071::kurtosis(beta.sample1)
+  )
+
+hist1 <- ggplot() +
+  geom_histogram(data=beta.sample1,
+                 aes(x=beta.sample1, y=after_stat(density)),
+                 breaks=seq(0,1,0.1),
+                 fill="grey30",
+                 color="lightgrey")+
+  stat_density(data=beta.sample1,
+               aes(x=beta.sample1, color="Density"), geom="line") +
+  geom_line(data=fig.1.data,
+            aes(x=x, y=beta.pdf, color="Population Beta Dist")) +
+  geom_hline(yintercept = 0) +
+  theme_bw()+
+  xlab("x")+
+  ylab("Density") +
+  labs(color="Line") +
+  ggtitle("Beta (2,5) Distribution")
+
+# for beta(5,5) dist
+
+set.seed(7272) # Set seed so we all get the same results.
+sample.size <- 500 # Specify sample details
+alpha <- 5
+beta <- 5
+beta.sample2 <- rbeta(n = sample.size,  # sample size
+                      shape1 = alpha,   # alpha parameter
+                      shape2 = beta)    # beta parameter
+
+beta.sample2 <- tibble(beta.sample2)
+
+sample.stats2 <- beta.sample2 |>
+  summarize(
+    alpha=alpha,
+    beta=beta,
+    mean = mean(beta.sample2),
+    variance = var(beta.sample2),
+    skewness = e1071::skewness(beta.sample2),
+    excess_kurt = e1071::kurtosis(beta.sample2)
+  )
+
+hist2 <- ggplot() +
+  geom_histogram(data=beta.sample2,
+                 aes(x=beta.sample2, y=after_stat(density)),
+                 breaks=seq(0,1,0.1),
+                 fill="grey30",
+                 color="lightgrey")+
+  stat_density(data=beta.sample2,
+               aes(x=beta.sample2, color="Density"), geom="line") +
+  geom_line(data=fig.2.data,
+            aes(x=x, y=beta.pdf, color="Population Beta Dist")) +
+  geom_hline(yintercept = 0) +
+  theme_bw()+
+  xlab("x")+
+  ylab("Density") +
+  labs(color="Line") +
+  ggtitle("Beta (5,5) Distribution")
+
+# for beta (5,2) distribution
+
+set.seed(7272) # Set seed so we all get the same results.
+sample.size <- 500 # Specify sample details
+alpha <- 5
+beta <- 2
+beta.sample3 <- rbeta(n = sample.size,  # sample size
+                      shape1 = alpha,   # alpha parameter
+                      shape2 = beta)    # beta parameter
+
+beta.sample3 <- tibble(beta.sample3)
+
+sample.stats3 <- beta.sample3 |>
+  summarize(
+    alpha=alpha,
+    beta=beta,
+    mean = mean(beta.sample3),
+    variance = var(beta.sample3),
+    skewness = e1071::skewness(beta.sample3),
+    excess_kurt = e1071::kurtosis(beta.sample3)
+  )
+
+hist3 <- ggplot() +
+  geom_histogram(data=beta.sample3,
+                 aes(x=beta.sample3, y=after_stat(density)),
+                 breaks=seq(0,1,0.1),
+                 fill="grey30",
+                 color="lightgrey")+
+  stat_density(data=beta.sample3,
+               aes(x=beta.sample3, color="Density"), geom="line") +
+  geom_line(data=fig.3.data,
+            aes(x=x, y=beta.pdf, color="Population Beta Dist")) +
+  geom_hline(yintercept = 0) +
+  theme_bw()+
+  xlab("x")+
+  ylab("Density") +
+  labs(color="Line") +
+  ggtitle("Beta (5,2) Distribution")
+
+# for beta(0.5, 0.5 dist)
+
+set.seed(7272) # Set seed so we all get the same results.
+sample.size <- 500 # Specify sample details
+alpha <- 0.5
+beta <- 0.5
+beta.sample4 <- rbeta(n = sample.size,  # sample size
+                      shape1 = alpha,   # alpha parameter
+                      shape2 = beta)    # beta parameter
+
+beta.sample4 <- tibble(beta.sample4)
+
+sample.stats4 <- beta.sample4 |>
+  summarize(
+    alpha=alpha,
+    beta=beta,
+    mean = mean(beta.sample4),
+    variance = var(beta.sample4),
+    skewness = e1071::skewness(beta.sample4),
+    excess_kurt = e1071::kurtosis(beta.sample4)
+  )
+
+hist4 <- ggplot() +
+  geom_histogram(data=beta.sample4,
+                 aes(x=beta.sample4, y=after_stat(density)),
+                 breaks=seq(0,1,0.1),
+                 fill="grey30",
+                 color="lightgrey")+
+  stat_density(data=beta.sample4,
+               aes(x=beta.sample4, color="Density"), geom="line") +
+  geom_line(data=fig.4.data,
+            aes(x=x, y=beta.pdf, color="Population Beta Dist")) +
+  geom_hline(yintercept = 0) +
+  theme_bw()+
+  xlab("x")+
+  ylab("Density") +
+  labs(color="Line") +
+  ggtitle("Beta (0.5,0.5) Distribution")
+
+sample.histograms <- hist1 + hist2 + hist3 + hist4 + plot_layout(guides = 'collect')
+
+sample.histograms
+@
+
+\begin{figure}[H]
+\begin{center}
+<<echo=FALSE, warning=FALSE, message=FALSE, fig.dim=c(2.5,1.75)>>=
+@
+\caption{Sample Figures for Various Beta Distributions}
+\label{samplehistograms} %we can now reference plot1
+\end{center}
+\end{figure}
+
+\subsection{Estimators}
+
+\subsection{Example}
 
 \end{document}

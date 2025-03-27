@@ -357,7 +357,7 @@ cumstats.kurt <- ggplot(data=cumstats.data) +
   geom_line(aes(x=observation, y=kurtosis-3, color="Cumulative Kurtosis"), show.legend=F) +
   geom_hline(yintercept = pop.kurt) + 
   xlab("observation") +
-  ylab("skewness") +
+  ylab("kurtosis") +
   ggtitle("Cumulative Statistics Kurtosis") +
   theme_bw()
 
@@ -543,6 +543,16 @@ mle.estimates <- optim(par = c(1,1),
 
 mle.alpha <- mle.estimates$par[1]
 mle.beta <- mle.estimates$par[2]
+
+estimates <- data.frame(
+  Method = c("MOM", "MLE"),
+  Alpha = c(mom.alpha, mle.alpha),
+  Beta = c(mom.beta, mle.beta)
+)
+
+library(xtable)
+momandmle <- xtable(estimates)
+momandmle
 
 density.data <- tibble(x=seq(0,0.023, length.out=1000)) |>
   mutate(mom.density = dbeta(x, mom.alpha, mom.beta),

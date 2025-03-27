@@ -90,7 +90,7 @@
 
 \begin{multicols}{2}
 \begin{abstract}
-The Beta distribution is a flexible probability distribution defined on the interval (0,1), often used to model proportions and probabilities. This lab investigates the properties of the Beta distribution, including its mean, variance, skewness, and kurtosis, using both theoretical derivations and numerical simulations. Through the generation of Beta-distributed samples, the convergence of sample statistics to population values is examined, highlighting the importance of sample size in statistical examination. Additionally, two estimation methods, the Method of Moments (MOM) and Maximum Likelihood Estimation (MLE), are compared using simulated real-world data. The effectiveness of these methods is evaluated through repeated sampling, with results demonstrating that the MLE provides more accurate and precise estimates than MOM. The application of the Beta distribution to country death rate data further illustrates its relevance in real-world modeling. 
+The Beta distribution is a flexible probability distribution on $[0,1]$, commonly used for modeling proportions and probabilities. This lab examines how graphical and numerical summaries of Beta-distributed samples connect to the underlying population distribution, particularly as sample size increases. Two estimation methods, the Method of Moments (MOM) and Maximum Likelihood Estimation (MLE), are compared using death rate data. Results show that MLE provides more precise estimates for $\alpha$, demonstrating a slight advantage over MOM, although both yield similar results. 
 
 \end{abstract}
 
@@ -98,27 +98,28 @@ The Beta distribution is a flexible probability distribution defined on the inte
 Beta distribution, moments, mean, variance, skewness, kurtosis, MOM estimator, MLE estimator.
 
 \section{Introduction}
-The Beta distribution is a continuous probability distribution defined on $[0,1]$. It is commonly used to model proportions, probabilities, and rates, making it useful in a variety of statistical and real-world applications. The shape of the Beta distribution is controlled by two parameters, $\alpha$ and $\beta$, which determine its skewness and characteristics. This lab explores the properties of the Beta distribution, compares theoretical and sample-based estimates, and applies parameter estimation techniques to real-world data. The primary objectives are to analyze the Beta distribution's properties, to compare sample statistics with true population values, to estimate the parameters $\alpha$ and $\beta$ from real-world data using the Method of Moments (MLE) and Maximum Likelihood Estimation (MLE), and to assess the effectiveness of different estimation techniques using simulation.
+The Beta distribution is a continuous probability distribution defined on $[0,1]$, commonly used to model proportions, probabilities, and rates. Controlled by two parameters, $\alpha$ and $\beta$, its shape ranges from highly symmetric to highly skewed, making it flexible for various statistical applications. This lab investigates the properties of the Beta distribution, compares population and sample-based estimates, and applies parameter estimation techniques to real-world data. Additionally, the effectiveness of MOM and MLE in estimating $\alpha$ and $\beta$ is assessed through simulation.
 
 \section{Density Functions and Parameters}
 The probability density function (PDF) of a beta distribution is given by:
-
 $$
 f_X(x \mid \alpha, \beta) = \frac{\Gamma(\alpha + \beta)}{\Gamma \alpha \Gamma \beta} x^{\alpha-1} (1-x)^{\beta - 1} I(x \in [0,1])
 $$
 where $I(x \in [0,1]) = 1$ when $x \in [0, 1]$ and $0$ otherwise.
 
-To visualize the impact of the parameters $\alpha$ and $\beta$ on the distribution, four cases were examined: Beta(2,5), Beta(5,5), Beta(5,2), and Beta(0.5,0.5). The first distribution is right-skewed, the second is symmetric, the third is left-skewed, and the forth is U-shaped. These distributions were plotted to illustrate how the parameters influence the shape of the density function. The plots in Figure \ref{populationfigures} demonstrate that increasing $\alpha$ shifts the distribution towards 1, while increasing $\beta$ shifts it towards zero. When $\alpha = \beta$, the distribution is symmetric. 
-
+To visualize the impact of the parameters $\alpha$ and $\beta$ on the distribution, four cases were examined: \texttt{Beta(2,5)}, \texttt{Beta(5,5)}, \texttt{Beta(5,2)}, and \texttt{Beta(0.5,0.5)}. The first distribution is right-skewed, the second is symmetric, the third is left-skewed, and the forth is U-shaped. The plots in Figure \ref{populationfigures} demonstrate this, illustrating that increasing $\alpha$ shifts the distribution towards 1, while increasing $\beta$ shifts it towards zero. When $\alpha= \beta$, the distribution is symmetric.
 
 \section{Properties}
-The Beta distribution's key properties include its mean, variance, skewness, and kurtosis. Each of the properties relies on $\alpha$ and $\beta$, showing how the distribution's shape and behavior changes depending on the parameters. These moments were computed using numerical integration and verified against the theoretical values in Table \ref{populationsummary}. 
-To evaluate whether data summaries of random samples connect to the actual population distribution, random samples of size 500 were drawn from each Beta distribution. The sample mean, variance, skewness, and kurtosis were computed as can be seen in Table \ref{samplestatistics}. These were then compared to population-level quantities in Table \ref{populationsummary}, and we conclude that the values closely resembled one another. Furthermore, the histograms and estimated density in Figure \ref{samplehistograms} demonstrate that the samples, in each case, closely resemble the theoretical Beta probability density functions. From this analysis, we confirmed that both our graphical and numerical summaries of random samples connect to the actual population distribution.
+Several important properties of the Beta distribution include the mean, variance, skewness, and excess kurtosis. These values were calculated for each Beta distribution using established mathematical formulas (Table \ref{populationsummary}). To verify accuracy, numerical integration was performed to compute moments directly from the PDF using a custom function, \texttt{beta.moment()}, which calculated both the centered and uncentered moments. The results aligned with theoretical expectations.
+
+Random samples of size $n=500$ were generated from each Beta distribution. Histograms were plotted alongside the true PDFs in Figure \ref{samplehistograms}, and numerical summaries were computed (Table \ref{samplestatistics}). Comparing Table \ref{samplestatistics} with Table \ref{populationsummary}, along with analyzing Figure \ref{samplehistograms}, confirms that sample estimates closely approximate theoretical values.
+
+To analyze sample size effects, cumulative statistics were plotted for the \texttt{Beta(2,5)} distribution using the \texttt{cumstats} package in \texttt{R} \citep{cumstats}. A single sample was first examined, followed by a simulation using a \texttt{for()} loop to generate data sets of size 500, adding new cumulative statistics lines at each iteration. The results (Figure \ref{cumstats} in the Appendix) show that variability is high for small samples but decreases as $n$ increases, illustrating convergence to population values. Results indicate the importance of sample size.
 
 
 
 % latex table generated in R 4.4.2 by xtable 1.8-4 package
-% Tue Mar 25 22:35:30 2025
+% Thu Mar 27 16:04:56 2025
 \begin{table}[H]
 \centering
 \begingroup\small
@@ -139,7 +140,7 @@ alpha & beta & mean & var & skew & kurtosis \\
 
 
 % latex table generated in R 4.4.2 by xtable 1.8-4 package
-% Tue Mar 25 22:35:30 2025
+% Thu Mar 27 16:04:56 2025
 \begin{table}[H]
 \centering
 \begingroup\small
@@ -159,18 +160,44 @@ alpha & beta & mean & var & skew & kurtosis \\
 \end{table}
 
 
+\pagebreak
 \section{Estimators}
-
+Since the true value of $\alpha$ and $\beta$ are unknown in real-world applications, parameter estimation methods are essential. Two widely used techniques are the Method of Moments (MOM) and Maximum Likelihood Estimation (MLE). MOM estimates parameters by equating sample moments to their corresponding population moments. Using the \texttt{nleqslv} package in \texttt{R}, parameters were chosen to match sample and population moments. MLE is a more general and widely used technique for parameter estimation. It finds the values of $\alpha$ and $\beta$ that maximize the likelihood of the observed data. The likelihood function is a product of the Beta PDF evaluated at each data point, but computationally, it is easier to work with the log-likelihood function. The \texttt{optim()} function in \texttt{R} was used to maximize the log-likelihood. MLE is generally regarded as more efficient since it often provides more precise estimates.
 
 \section{Death Rates Example}
+The flexibility of the Beta distribution was tested by modeling real-world death rate data from the world bank \citep{deathrates}. The data, representing deaths per 1,000 citizens, was transformed into a rate and fitted to a Beta distribution using both MOM and MLE. Parameter estimates were obtained by solving moment equations for MOM and optimizing the likelihood function for MLE (Table \ref{momandmle}). While the estimates for $\alpha$ weere similar across methods, the estimates for $\beta$ differed slightly.
 
+
+% latex table generated in R 4.4.2 by xtable 1.8-4 package
+% Thu Mar 27 16:04:56 2025
+\begin{table}[H]
+\centering
+\begingroup\small
+\begin{tabular}{lrr}
+  \hline
+Method & Alpha & Beta \\ 
+  \hline
+MOM & 8.43 & 1003.46 \\ 
+  MLE & 8.27 & 985.05 \\ 
+   \hline
+\end{tabular}
+\endgroup
+\caption{MOM and MLE Estimates} 
+\label{momandmle}
+\end{table}
+
+
+To visualize the results, histograms of the empirical data were plotted with the estimated Beta distributions superimposed (Figure \ref{estimatedhistogram}). Both methods produced reasonable fits. To determine which estimators we should use, then, we computed bias, precision, and mean squared error (Table \ref{biasprecision}). Density plots (Figure \ref{densitycomparison}) further helped us visualize estimator differences. The results indicate that while MLE provided more narrow (precise) estimates for $\alpha$, both methods performed similarly overall.
+
+\section{Conclusion}
+This study illustrates the flexibility of the Beta distirbution and its usefulness in modeling proportion-based data. Graphical and numerical summaries show that sample estimates converge to population values as sample size increases. Additionally, the comparison of MOM and MLE estimators reveals that while both methods yield accurate and comparable results, MLE generally provides more precise parameter estimates. These findings reinforce the importance of selecting appropriate estimation techniques depending on the application and data characteristics.
+
+\columnbreak
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Bibliography
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \vspace{2em}
-
-\noindent\textbf{Bibliography:} 
 
 \begin{tiny}
 \bibliography{bib}
@@ -201,6 +228,7 @@ alpha & beta & mean & var & skew & kurtosis \\
 \end{center}
 \end{figure}
 
+\pagebreak
 \subsection{Properties}
 \subsubsection{Sample Distribution Figures}
 \begin{knitrout}\scriptsize
@@ -216,8 +244,86 @@ alpha & beta & mean & var & skew & kurtosis \\
 \end{center}
 \end{figure}
 
-\subsection{Estimators}
+\pagebreak
+\subsubsection{Cumulative Statistics: Does Sample Size Matter?}
 
+\begin{knitrout}\scriptsize
+\definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}
+\includegraphics[width=\maxwidth]{figure/plot3-1} 
+\end{knitrout}
+\begin{figure}[H]
+\begin{center}
+
+\caption{Cumulative Statistics as Sample Size Increases}
+\label{cumstats} %we can now reference plot1
+\end{center}
+\end{figure}
+
+\pagebreak
+\subsubsection{Modeling the Variation}
+\begin{knitrout}\scriptsize
+\definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}
+\includegraphics[width=\maxwidth]{figure/plot4-1} 
+\end{knitrout}
+\begin{figure}[H]
+\begin{center}
+
+\caption{Modeling the Variation of Statistics}
+\label{variation} %we can now reference plot1
+\end{center}
+\end{figure}
+
+\pagebreak
+\subsection{Estimators}
 \subsection{Example}
+\subsubsection{MOM vs. MLE Estimates}
+\begin{knitrout}\scriptsize
+\definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}
+\includegraphics[width=\maxwidth]{figure/plot5-1} 
+\end{knitrout}
+\begin{figure}[H]
+\begin{center}
+
+\caption{Estimated Beta Distributions}
+\label{estimatedhistogram} %we can now reference plot1
+\end{center}
+\end{figure}
+
+\pagebreak
+
+\subsubsection{Bias, Precision, and Mean Squared Error of Estimates}
+
+% latex table generated in R 4.4.2 by xtable 1.8-4 package
+% Thu Mar 27 16:05:26 2025
+\begin{table}[H]
+\centering
+\begingroup\small
+\begin{tabular}{lrrrrrr}
+  \hline
+Parameter & Bias\_MOM & Bias\_MLE & Precision\_MOM & Precision\_MLE & MSE\_MOM & MSE\_MLE \\ 
+  \hline
+Alpha & 0.08 & 0.07 & 1.83 & 2.13 & 0.55 & 0.48 \\ 
+  Beta & 10.29 & 9.11 & 0.00 & 0.00 & 8288.46 & 7132.70 \\ 
+   \hline
+\end{tabular}
+\endgroup
+\caption{Bias, Precision, and Mean Squared Error} 
+\label{biasprecision}
+\end{table}
+
+
+\pagebreak
+\subsubsection{Estimated Density for MOM and MLE}
+\begin{knitrout}\scriptsize
+\definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}
+\includegraphics[width=\maxwidth]{figure/plot6-1} 
+\end{knitrout}
+\begin{figure}[H]
+\begin{center}
+
+\caption{Estimated Densities for MOM and MLE}
+\label{densitycomparison} %we can now reference plot1
+\end{center}
+\end{figure}
 
 \end{document}
